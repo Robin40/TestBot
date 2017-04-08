@@ -1,15 +1,16 @@
 /**
  * Created by gabriel on 08-04-17.
  */
+
+var requestify = require('requestify');
 'use strict';
 
 class Activity{
 
-    constructor(name,limit,notifyUsers){
+    constructor(name,limit){
         this.name = name;
         this.limit = limit;
         this.users = [];
-        this.notifyUsers = notifyUsers;
         this.time = 0;
         this.place = '';
     }
@@ -26,7 +27,7 @@ class Activity{
         if(users.length<limit){
             users.push(username);
         }
-        else{
+        if(users.length===limit){
             this.notifyUsers(this.users,this.time,this.place);
         }
     }
@@ -34,6 +35,7 @@ class Activity{
     getMembers(){
         return this.users;
     }
+
 }
 
 module.exports = Activity;
