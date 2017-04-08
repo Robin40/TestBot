@@ -1,4 +1,5 @@
 const requestify = require('requestify');
+var state = require("./state_machine.js");
 
 const ACCESS_TOKEN = "EAAbCANkytUYBAOhJ3xmXfcqHwajvWy5uhWUmuI0VxIzIJs8hOTxVbzefm2SFb6uL4ZBYjZCuZCKiSnXLJOCxjPBUWrwtUUwrBalm8dqy36oorFGP4KiJA7iBhE556Q1iENzyesZCuQMPeChyvoMpw8P9leibb5SyignjJqjiSQZDZD";
 
@@ -46,7 +47,7 @@ function send_picture(userId) {
 }
 
 function send_buttons(userId) {
-    console.log('send_buttons');
+    console.log('send_buttons', userId);
     return send({
         recipient: {id: userId},
         message: {
@@ -58,7 +59,7 @@ function send_buttons(userId) {
                     buttons: [
                         {
                             type: "web_url",
-                            url: ":http://google.com/",
+                            url: "http://google.com/",
                             title: "Go to Google"
                         },
                         {
@@ -78,19 +79,44 @@ function send_buttons(userId) {
 function greet(userId) {
     return get_data_of(userId).then(userData => {
         const text = `Hi ${userData.first_name}!`;
-        send_message(userId, text);
+        return send_message(userId, text);
     });
 }
 
 function process_message(sender, text) {
-    send_message(sender, `You said: ${text}`);
-    greet(sender);
-    send_picture(sender);
-    send_buttons(sender);
+    const last = state.of[sender];
+    let next = last;
+
+    if (last === undefined) {
+        greet(sender)
+            .then(() => send_buttons(sender));
+        next = state.HELLO;
+    }
+    else if (last === state.HELLO) {
+        send_message(sender, 'Please use the buttons')
+            .then(() => send_buttons(sender));
+    }
+    else if (last === state.WANT) {
+        send_message(`You want ${text}, OK`);
+    }
+
+    state.of[sender] = next;
+
+    /*greet(sender)
+        .then(() => send_message(sender, `You said: ${text}`))
+        .then(() => send_picture(sender))
+        .then(() => send_buttons(sender));*/
+}
+
+const action = {
+    I_WANT: sender => {
+        send_message(sender, 'What do you want?');
+        state.of[sender] = state.WANT;
+    }
 }
 
 function process_payload(sender, payload) {
-    send_message(sender, `You pressed ${payload}`);
+    action[payload](sender);
 }
 
 module.exports = {
