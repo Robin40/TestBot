@@ -97,7 +97,7 @@ function process_message(sender, text) {
             .then(() => send_buttons(sender));
     }
     else if (last === state.WANT) {
-        send_message(`You want ${text}, OK`);
+        send_message(sender, `You want ${text}, OK`);
     }
 
     state.of[sender] = next;
