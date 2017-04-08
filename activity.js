@@ -27,7 +27,7 @@ class Activity{
             users.push(username);
         }
         else{
-            this.notifyUsers(this.time,this.place);
+            this.notifyUsers(this.users,this.time,this.place);
         }
     }
 
