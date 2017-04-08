@@ -1,9 +1,14 @@
-const $ = require('requestify');
+const requestify = require('requestify');
 
-const ACCESS_TOKEN = "EAAbCANkytUYBAHcOtp4HcKyJfKwdAX1X9NZCjLynZC26u0hSBvoDZAPDOIdmjf8GlcwUSCDn0eQjqfi3undSU6eFfHInckBHCLex8wG5oCsK0iwdOqT0vnKpDKBg0AMy0LOUlEkBGfzoy2iACjczPXBN3QHD0lD1UZB1hyXPygZDZD";
+const ACCESS_TOKEN = "EAAbCANkytUYBAOhJ3xmXfcqHwajvWy5uhWUmuI0VxIzIJs8hOTxVbzefm2SFb6uL4ZBYjZCuZCKiSnXLJOCxjPBUWrwtUUwrBalm8dqy36oorFGP4KiJA7iBhE556Q1iENzyesZCuQMPeChyvoMpw8P9leibb5SyignjJqjiSQZDZD";
 
 function send(data) {
-    return $.post("https://graph.facebook.com/v2.6/me/messages?access_token=" + ACCESS_TOKEN);
+    console.log('se ejecuto el send');
+    return requestify.post("https://graph.facebook.com/v2.6/me/messages?access_token=" + ACCESS_TOKEN, data)
+        .fail(response => {
+            console.log(`fallo la mierda po`, response.getCode());
+            return Promise.reject(response.getCode());
+        });
 }
 
 function send_message(userId, text) {
@@ -13,15 +18,18 @@ function send_message(userId, text) {
     });
 }
 
-function get_user_data(userId) {
-    return $.get(`https://graph.facebook.com/v2.6/${userId}`, {
-        fields: "first_name,last_name,profile_pic,locale,timezone,gender",
-        access_token: ACCESS_TOKEN
+function get_data_of(userId) {
+    return requestify.get(`https://graph.facebook.com/v2.6/${userId}? fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=${ACCESS_TOKEN}`).then(response => {
+        console.log('response');
+        return response.getBody();
+    }).fail(response => {
+        console.log('fail');
+        return Promise.reject(response.getCode());
     });
 }
 
 function send_picture(userId) {
-    return get_user_data().then(json => {
+    return get_data_of(userId).then(json => {
         const photo = json.profile_pic;
         return send({
             recipient: {id: userId},
@@ -32,10 +40,13 @@ function send_picture(userId) {
                 }
             }
         });
+    }).catch(code => {
+        console.log(`send picture failed with ${code}`);
     });
 }
 
 function send_buttons(userId) {
+    console.log('send_buttons');
     return send({
         recipient: {id: userId},
         message: {
@@ -59,17 +70,20 @@ function send_buttons(userId) {
                 }
             }
         }
+    }).then(() => {
+        console.log('se ejecuto este then');
     });
 }
 
 function greet(userId) {
-    return get_user_data(userId).then(userData => {
+    return get_data_of(userId).then(userData => {
         const text = `Hi ${userData.first_name}!`;
         send_message(userId, text);
     });
 }
 
 function process_message(sender, text) {
+    send_message(sender, `You said: ${text}`);
     greet(sender);
     send_picture(sender);
     send_buttons(sender);
