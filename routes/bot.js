@@ -5,7 +5,6 @@ const Activity = require("./activity.js");
 const ACCESS_TOKEN = "EAAbCANkytUYBAOhJ3xmXfcqHwajvWy5uhWUmuI0VxIzIJs8hOTxVbzefm2SFb6uL4ZBYjZCuZCKiSnXLJOCxjPBUWrwtUUwrBalm8dqy36oorFGP4KiJA7iBhE556Q1iENzyesZCuQMPeChyvoMpw8P9leibb5SyignjJqjiSQZDZD";
 
 function send(data) {
-    console.log('se ejecuto el send');
     return requestify.post("https://graph.facebook.com/v2.6/me/messages?access_token=" + ACCESS_TOKEN, data)
         .fail(response => {
             console.log(`fallo la mierda po`, response.getCode());
@@ -86,6 +85,7 @@ function process_message(user, text) {
     const last = user.state;
     let next = last;
 
+    //console.log(user, last, next);
     if (last === undefined) {
         greet(user)
             .then(() => send_buttons(user));

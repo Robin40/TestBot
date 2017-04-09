@@ -5,7 +5,6 @@
 
 
 class User {
-
     constructor(userID) {
         this.ID = userID;
         this.actName = undefined;
