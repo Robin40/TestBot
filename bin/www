@@ -23,8 +23,8 @@ app.set('port', port);
 const fs = require('fs');
 
 const options = {
-    key: fs.readFileSync('etc/letsencrypt/keys/0000_key-certbot.pem'),
-    cert: fs.readFileSync('etc/letsencrypt/csr/0000_csr-certbot.pem')
+    key: fs.readFileSync('/etc/letsencrypt/keys/0000_key-certbot.pem'),
+    cert: fs.readFileSync('/etc/letsencrypt/csr/0000_csr-certbot.pem')
 };
 
 let server = https.createServer(options, app);
