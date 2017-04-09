@@ -82,6 +82,7 @@ function greet(user) {
 }
 
 function process_message(user, text) {
+    console.log('user = ', user);
     const last = user.state;
     let next = last;
 

@@ -9,13 +9,18 @@ router.get('/', (req, res) => {
 });
 
 
+const botID = '1701565819859368';
+
 router.post('/', (req, res) => {
     const messaging_events = req.body.entry[0].messaging;
 
     for (let i = 0; i < messaging_events.length; i++) {
         const event = req.body.entry[0].messaging[i];
         const senderID = event.sender.id;
+        if (senderID === botID)
+            continue;
         const sender = User.byID[senderID] || new User(senderID);
+        User.byID[senderID] = sender;
 
         if (event.message && event.message.text) {
             const text = event.message.text;
