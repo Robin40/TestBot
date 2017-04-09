@@ -43,7 +43,13 @@ class Activity{
             if(err) return console.error(err);
             api.setOptions({force_login: true, selfListen: true});
 
-            api.sendMessage("Are you ready for " + this.name + "?!", this.users, (err, messageInfo) => {
+            api.sendMessage("Are you ready for " + this.name + "?!",
+                (userList => {
+                    let userIDList = [];
+                    for(user of userList)
+                        userIDList.push(user.ID);
+                    return userIDList;
+                })(this.users), (err, messageInfo) => {
                 api.setTitle(this.name, messageInfo.threadID);
                 //Podria ser foto en futuro, podria dar comando para eliminar
             });
