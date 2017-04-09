@@ -9,13 +9,13 @@ login({email: "freetime.bot@gmail.com", password : "todossomosbruno123"}, (err, 
 
     function greet(user)
     {
-        api.sendMessage("Hello",user.ID, () =>
+        api.sendMessage("Hello!",user.ID, () =>
             api.sendMessage("What do you want to do?", user.ID));
     }
 
     function notifyUsers(userList,name)
     {
-        api.sendMessage("Are you ready for " + name + "?!",userList, (err, messageInfo) => {
+        api.sendMessage("Are you ready for ${name}?!",userList, (err, messageInfo) => {
             api.setTitle(`It's ${name} time!`, messageInfo.threadID);
         });
     }
@@ -49,11 +49,18 @@ login({email: "freetime.bot@gmail.com", password : "todossomosbruno123"}, (err, 
         }
         else if (last === state.LIMIT_PLEASE) {
             const limit = +text;
-            Activity.byName[user.actName] = new Activity(user.actName, limit, notifyUsers);
-            Activity.byName[user.actName].addMember(userID);
-            api.sendMessage(`OK, I am going to find the people that you need`, userID);
+            if(limit === 1)
+                api.sendMessage(`You can't do ${user.actName} all by yourself!`, userID);
+            else if(limit > 10)
+                api.sendMessage(`Sorry, too much people! :/`,userID);
+            else
+            {
+                Activity.byName[user.actName] = new Activity(user.actName, limit, notifyUsers);
+                Activity.byName[user.actName].addMember(userID);
+                api.sendMessage(`OK, I am going to find the people that you need`, userID);
 
-            next = state.WAITING_FOR_PEOPLE;
+                next = state.WAITING_FOR_PEOPLE;
+            }
         }
         else if (last === state.WAITING_FOR_PEOPLE) {
             api.sendMessage(`Wait please, I am searching for people`,userID);
@@ -61,7 +68,6 @@ login({email: "freetime.bot@gmail.com", password : "todossomosbruno123"}, (err, 
 
         user.state = next;
         User.byID[userID] = user;
-
 
     });
 });
