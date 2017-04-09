@@ -25,9 +25,9 @@ class Activity{
         this.place = place;
     }
 
-    addMember(userID){
-        if(this.users.length<this.limit && this.users.indexOf(userID) === -1){
-            this.users.push(userID);
+    addMember(user){
+        if(this.users.length<this.limit && this.users.indexOf(user) === -1){
+            this.users.push(user);
         }
         if(this.users.length===this.limit){
             this.notifyUsers();
@@ -42,15 +42,16 @@ class Activity{
         login({email: "freetime.bot@gmail.com", password : "todossomosbruno123"}, (err, api) => {
             if(err) return console.error(err);
             api.setOptions({force_login: true, selfListen: true});
-            let ID;
+
             api.sendMessage("Are you ready for " + this.name + "?!", this.users, (err, messageInfo) => {
-                ID = messageInfo.threadID;
-                api.setTitle(this.name, threadID);
+                api.setTitle(this.name, messageInfo.threadID);
                 //Podria ser foto en futuro, podria dar comando para eliminar
             });
 
         });
     }
 }
+
+Activity.byName = {};
 
 module.exports = Activity;

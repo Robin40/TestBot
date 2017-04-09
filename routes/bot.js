@@ -1,5 +1,6 @@
 const requestify = require('requestify');
-var state = require("./state_machine.js");
+const state = require("./state_machine.js");
+const Activity = require("./activity.js");
 
 const ACCESS_TOKEN = "EAAbCANkytUYBAOhJ3xmXfcqHwajvWy5uhWUmuI0VxIzIJs8hOTxVbzefm2SFb6uL4ZBYjZCuZCKiSnXLJOCxjPBUWrwtUUwrBalm8dqy36oorFGP4KiJA7iBhE556Q1iENzyesZCuQMPeChyvoMpw8P9leibb5SyignjJqjiSQZDZD";
 
@@ -12,15 +13,15 @@ function send(data) {
         });
 }
 
-function send_message(userId, text) {
+function send_message(user, text) {
     return send({
-        recipient: {id: userId},
+        recipient: {id: user.ID},
         message: {text: text}
     });
 }
 
-function get_data_of(userId) {
-    return requestify.get(`https://graph.facebook.com/v2.6/${userId}? fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=${ACCESS_TOKEN}`).then(response => {
+function get_data_of(user) {
+    return requestify.get(`https://graph.facebook.com/v2.6/${user.ID}? fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=${ACCESS_TOKEN}`).then(response => {
         console.log('response');
         return response.getBody();
     }).fail(response => {
@@ -29,11 +30,11 @@ function get_data_of(userId) {
     });
 }
 
-function send_picture(userId) {
-    return get_data_of(userId).then(json => {
+function send_picture(user) {
+    return get_data_of(user).then(json => {
         const photo = json.profile_pic;
         return send({
-            recipient: {id: userId},
+            recipient: {id: user.ID},
             message: {
                 attachment: {
                     type: "image",
@@ -46,10 +47,10 @@ function send_picture(userId) {
     });
 }
 
-function send_buttons(userId) {
-    console.log('send_buttons', userId);
+function send_buttons(user) {
+    
     return send({
-        recipient: {id: userId},
+        recipient: {id: user.ID},
         message: {
             attachment: {
                 type: "template",
@@ -71,59 +72,65 @@ function send_buttons(userId) {
                 }
             }
         }
-    }).then(() => {
-        console.log('se ejecuto este then');
     });
 }
 
-function greet(userId) {
-    return get_data_of(userId).then(userData => {
+function greet(user) {
+    return get_data_of(user).then(userData => {
         const text = `Hi ${userData.first_name}!`;
-        return send_message(userId, text);
+        return send_message(user, text);
     });
 }
 
-function process_message(sender, text) {
-    const last = state.of[sender];
+function process_message(user, text) {
+    const last = user.state;
     let next = last;
 
     if (last === undefined) {
-        greet(sender)
-            .then(() => send_buttons(sender));
+        greet(user)
+            .then(() => send_buttons(user));
         next = state.HELLO;
     }
     else if (last === state.HELLO) {
-        send_message(sender, 'Please use the buttons')
-            .then(() => send_buttons(sender));
+        send_message(user, 'Please use the buttons')
+            .then(() => send_buttons(user));
     }
     else if (last === state.WANT) {
-        send_message(sender, `You want ${text}, OK`)
-            .then(() => send_message(sender,
-                `How many people do you need?`));
-        next = state.LIMIT_PLEASE;
+        const actName = text.toLowerCase();
+        user.actName = actName;
+
+        const activity = Activity.byName[actName];
+        if (!activity) {
+            send_message(user, `How many people do you need?`);
+            next = state.LIMIT_PLEASE;            
+        } else {
+            activity.addMember(user);
+            send_message(user, `OK, I am going to find the people that you need`);
+            next = state.WAITING_FOR_PEOPLE;
+        }
     }
     else if (last === state.LIMIT_PLEASE) {
         const limit = +text;
+        Activity.byName[user.actName] = new Activity(user.actName, limit);
+        send_message(user, `OK, I am going to find the people that you need`);
         next = state.WAITING_FOR_PEOPLE;
     }
+    else if (last === state.WAITING_FOR_PEOPLE) {
+        send_message(user, `Wait please, I am searching for people`);
+    }
 
-    state.of[sender] = next;
-
-    /*greet(sender)
-        .then(() => send_message(sender, `You said: ${text}`))
-        .then(() => send_picture(sender))
-        .then(() => send_buttons(sender));*/
+    user.state = next;
 }
 
 const action = {
-    I_WANT: sender => {
-        send_message(sender, 'What do you want?');
-        state.of[sender] = state.WANT;
+    I_WANT: user => {
+        send_message(user, 'What do you want?');
+        user.state = state.WANT;
     }
 }
 
-function process_payload(sender, payload) {
-    action[payload](sender);
+function process_payload(user, payload) {
+    action[payload](user);
 }
 
 module.exports = {
