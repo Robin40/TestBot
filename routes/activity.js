@@ -41,14 +41,15 @@ class Activity{
     notifyUsers() {
         login({email: "freetime.bot@gmail.com", password : "todossomosbruno123"}, (err, api) => {
             if(err) return console.error(err);
-            api.setOptions({force_login: true, selfListen: true});
+            //api.setOptions({force_login: true, selfListen: true});
+            let myID = api.getCurrentUserID();
 
             api.sendMessage("Are you ready for " + this.name + "?!",
                 (userList => {
-                    let userIDList = [];
-                    for(user of userList)
-                        userIDList.push(user.ID);
-                    return userIDList;
+                    console.log('userList ', userList);
+                    let ids = userList.map(user => user.ID);
+                    ids.push(myID);
+                    return ids;
                 })(this.users), (err, messageInfo) => {
                 api.setTitle(this.name, messageInfo.threadID);
                 //Podria ser foto en futuro, podria dar comando para eliminar
