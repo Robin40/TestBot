@@ -97,7 +97,14 @@ function process_message(sender, text) {
             .then(() => send_buttons(sender));
     }
     else if (last === state.WANT) {
-        send_message(sender, `You want ${text}, OK`);
+        send_message(sender, `You want ${text}, OK`)
+            .then(() => send_message(sender,
+                `How many people do you need?`));
+        next = state.LIMIT_PLEASE;
+    }
+    else if (last === state.LIMIT_PLEASE) {
+        const limit = +text;
+        next = state.WAITING_FOR_PEOPLE;
     }
 
     state.of[sender] = next;
