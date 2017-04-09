@@ -8,11 +8,7 @@ let index = require('./routes/index');
 let users = require('./routes/users');
 
 let express = require('express');
-let enforce = require('express-sslify');
-
 let app = express();
-app.use(enforce.HTTPS());
-
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
