@@ -23,8 +23,8 @@ app.set('port', port);
 const fs = require('fs');
 
 const options = {
-    key: fs.readFileSync('./key.pem', 'utf8'),
-    cert: fs.readFileSync('./server.crt', 'utf8')
+    key: fs.readFileSync('bin/key.pem', 'utf8'),
+    cert: fs.readFileSync('bin/server.crt', 'utf8')
 };
 
 let server = https.createServer(options, app);
