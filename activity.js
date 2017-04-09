@@ -7,12 +7,13 @@ var requestify = require('requestify');
 
 class Activity{
 
-    constructor(name,limit){
+    constructor(name, limit, notifyUsers){
         this.name = name;
         this.limit = limit;
         this.users = [];
         this.time = 0;
         this.place = '';
+        this.notifyUsers = notifyUsers;
     }
 
     setTime(time){
@@ -24,10 +25,10 @@ class Activity{
     }
 
     addMember(username){
-        if(users.length<limit){
-            users.push(username);
+        if(this.users.length<this.limit){
+            this.users.push(username);
         }
-        if(users.length===limit){
+        if(this.users.length===this.limit){
             this.notifyUsers(this.users,this.time,this.place);
         }
     }
