@@ -5,8 +5,9 @@
 
 
 class User {
-    constructor(userID) {
+    constructor(userID, name)  {
         this.ID = userID;
+        this.name = name;
         this.actName = undefined;
         this.state = undefined;
     }

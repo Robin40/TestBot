@@ -1,5 +1,8 @@
 'use strict';
 
+const requestify = require('requestify');
+const state = require("./state_machine.js");
+const Activity = require("./activity.js");
 const express = require('express');
 const router = express.Router();
 const bot = require('./bot.js');
@@ -10,7 +13,22 @@ router.get('/', (req, res) => {
     res.send(req.query['hub.challenge']);
 });
 
+const ACCESS_TOKEN = "EAAbCANkytUYBAOhJ3xmXfcqHwajvWy5uhWUmuI0VxIzIJs8hOTxVbzefm2SFb6uL4ZBYjZCuZCKiSnXLJOCxjPBUWrwtUUwrBalm8dqy36oorFGP4KiJA7iBhE556Q1iENzyesZCuQMPeChyvoMpw8P9leibb5SyignjJqjiSQZDZD";
 
+function send(data) {
+    return requestify.post("https://graph.facebook.com/v2.6/me/messages?access_token=" + ACCESS_TOKEN, data)
+        .fail(response => {
+            console.log(`fallo la mierda po`, response.getCode());
+            return Promise.reject(response.getCode());
+        });
+}
+
+function send_message(userID, text) {
+    return send({
+        recipient: {id: userID},
+        message: {text: text}
+    });
+}
 const botID = '1701565819859368';
 
 router.post('/', (req, res) => {
@@ -21,16 +39,8 @@ router.post('/', (req, res) => {
         const senderID = event.sender.id;
         if (senderID === botID)
             continue;
-        const sender = User.byID[senderID] || new User(senderID);
-        User.byID[senderID] = sender;
 
-        if (event.message && event.message.text) {
-            const text = event.message.text;
-            bot.process_message(sender, text);
-        } else if (event.postback && event.postback.payload) {
-            const payload = event.postback.payload;
-            bot.process_payload(sender, payload);
-        }
+        send_message(senderID, "Porfavor hazte amigo de y hablale a Freetime bot: https://www.facebook.com/freetime.bot.9");
     }
     res.sendStatus(200);
 });

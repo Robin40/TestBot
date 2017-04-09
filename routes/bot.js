@@ -1,33 +1,70 @@
 const requestify = require('requestify');
 const state = require("./state_machine.js");
 const Activity = require("./activity.js");
+const login = require("facebook-chat-api");
+const User = require("./User.js");
 
-const ACCESS_TOKEN = "EAAbCANkytUYBAOhJ3xmXfcqHwajvWy5uhWUmuI0VxIzIJs8hOTxVbzefm2SFb6uL4ZBYjZCuZCKiSnXLJOCxjPBUWrwtUUwrBalm8dqy36oorFGP4KiJA7iBhE556Q1iENzyesZCuQMPeChyvoMpw8P9leibb5SyignjJqjiSQZDZD";
+login({email: "freetime.bot@gmail.com", password : "todossomosbruno123"}, (err, api) => {
+    if(err) return console.error(err);
 
-function send(data) {
-    return requestify.post("https://graph.facebook.com/v2.6/me/messages?access_token=" + ACCESS_TOKEN, data)
-        .fail(response => {
-            console.log(`fallo la mierda po`, response.getCode());
-            return Promise.reject(response.getCode());
+    function greet(user)
+    {
+        api.sendMessage("Hello",user.ID, () =>
+            api.sendMessage("What do you want to do?", user.ID));
+    }
+
+    function notifyUsers(userList,name)
+    {
+        api.sendMessage("Are you ready for " + name + "?!",userList, (err, messageInfo) => {
+            api.setTitle(`It's ${name} time!`, messageInfo.threadID);
         });
-}
+    }
 
-function send_message(user, text) {
-    return send({
-        recipient: {id: user.ID},
-        message: {text: text}
-    });
-}
+    api.listen((err, message) =>
+    {
+        let userID = message.senderID;
+        let user = User.byID[userID] || new User(userID);
+        const last = user.state;
+        let next = last;
+        let text = message.body;
 
-function get_data_of(user) {
-    return requestify.get(`https://graph.facebook.com/v2.6/${user.ID}? fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=${ACCESS_TOKEN}`).then(response => {
-        console.log('response');
-        return response.getBody();
-    }).fail(response => {
-        console.log('fail');
-        return Promise.reject(response.getCode());
+        if (last === undefined) {
+            greet(user);
+            next = state.WANT;
+        }
+
+        else if (last === state.WANT) {
+            const actName = text.toLowerCase();
+            user.actName = actName;
+
+            const activity = Activity.byName[actName];
+            if (!activity) {
+                api.sendMessage(`How many people do you need?`, userID);
+                next = state.LIMIT_PLEASE;
+            } else {
+                activity.addMember(userID);
+                api.sendMessage(`OK, I am going to find the people that you need`, userID);
+                next = state.WAITING_FOR_PEOPLE;
+            }
+        }
+        else if (last === state.LIMIT_PLEASE) {
+            const limit = +text;
+            Activity.byName[user.actName] = new Activity(user.actName, limit, notifyUsers);
+            Activity.byName[user.actName].addMember(userID);
+            api.sendMessage(`OK, I am going to find the people that you need`, userID);
+
+            next = state.WAITING_FOR_PEOPLE;
+        }
+        else if (last === state.WAITING_FOR_PEOPLE) {
+            api.sendMessage(`Wait please, I am searching for people`,userID);
+        }
+
+        user.state = next;
+        User.byID[userID] = user;
+
+
     });
-}
+});
 
 function send_picture(user) {
     return get_data_of(user).then(json => {
@@ -46,38 +83,11 @@ function send_picture(user) {
     });
 }
 
-function send_buttons(user) {
-    
-    return send({
-        recipient: {id: user.ID},
-        message: {
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "button",
-                    text: "What do you want to do next?",
-                    buttons: [
-                        {
-                            type: "web_url",
-                            url: "http://google.com/",
-                            title: "Go to Google"
-                        },
-                        {
-                            type: "postback",
-                            title: "I want ...",
-                            payload: "I_WANT"
-                        }
-                    ]
-                }
-            }
-        }
-    });
-}
-
 function greet(user) {
-    return get_data_of(user).then(userData => {
-        const text = `Hi ${userData.first_name}!`;
-        return send_message(user, text);
+    login({appState: W}, (err, api) => {
+        if(err) return console.error(err);
+
+        api.sendMessage(user.ID,"Hola");
     });
 }
 
@@ -103,7 +113,7 @@ function process_message(user, text) {
         const activity = Activity.byName[actName];
         if (!activity) {
             send_message(user, `How many people do you need?`);
-            next = state.LIMIT_PLEASE;            
+            next = state.LIMIT_PLEASE;
         } else {
             activity.addMember(user);
             send_message(user, `OK, I am going to find the people that you need`);
