@@ -13,7 +13,7 @@ let https = require('https');
  * Get port from environment and store in Express.
  */
 
-let port = normalizePort('8080');
+let port = normalizePort('80');
 app.set('port', port);
 
 /**
